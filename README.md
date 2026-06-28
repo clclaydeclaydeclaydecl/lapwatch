@@ -10,12 +10,6 @@ curl -sS https://raw.githubusercontent.com/clclaydeclaydeclaydecl/lapwatch/main/
 
 lapwatch
 
-## Requirements
-
-- Linux
-- lm-sensors (optional, for CPU temp)
-- systemd (for service checks)
-
 ## Tested On
 
 Ubuntu Server 22.04
