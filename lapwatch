@@ -1,52 +1,74 @@
 #!/bin/bash
 clear
 while true; do
-    echo "  ┌─────────────────────────────────────────────┐"
-    echo "  │                 LAPWATCH                    │"
-    echo "  ├─────────────────────────────────────────────┤"
-    printf "  │  %-10s : %-30s │\n" "host" "$(hostname)"
-    printf "  │  %-10s : %-30s │\n" "uptime" "$(uptime -p | cut -d' ' -f2-)"
-    printf "  │  %-10s : %-30s │\n" "time" "$(date '+%I:%M:%S %p')"
-    echo "  ├─────────────────────────────────────────────┤"
-    printf "  │  %-10s : %-30s │\n" "cpu temp" "$(sensors 2>/dev/null | grep -m1 'Core' | awk '{print $3}' | tr -d '+')"
-    printf "  │  %-10s : %-30s │\n" "cpu load" "$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | tr -d ',')"
-    printf "  │  %-10s : %-30s │\n" "ram" "$(free -h | awk '/^Mem:/ {print $3}') / $(free -h | awk '/^Mem:/ {print $2}') ($(free | awk '/^Mem:/ {printf "%.0f", $3/$2 * 100}')%)"
-    printf "  │  %-10s : %-30s │\n" "disk" "$(df -h / | awk 'NR==2 {print $3}') / $(df -h / | awk 'NR==2 {print $2}') ($(df / | awk 'NR==2 {print $5}'))"
-    echo "  ├─────────────────────────────────────────────┤"
+    host=$(hostname)
+    upt=$(uptime -p | cut -d' ' -f2-)
+    tim=$(date '+%I:%M:%S %p')
+    cputemp=$(sensors 2>/dev/null | grep -m1 'Core' | awk '{print $3}' | tr -d '+')
+    cpuload=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | tr -d ',')
+    ram=$(free -h | awk '/^Mem:/ {print $3}')
+    ramtotal=$(free -h | awk '/^Mem:/ {print $2}')
+    rampct=$(free | awk '/^Mem:/ {printf "%.0f", $3/$2 * 100}')
+    disk=$(df -h / | awk 'NR==2 {print $3}')
+    disktotal=$(df -h / | awk 'NR==2 {print $2}')
+    diskpct=$(df / | awk 'NR==2 {print $5}')
+    localip=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1 | head -1)
+    ping -c1 -W1 8.8.8.8 >/dev/null 2>&1 && net="connected" || net="offline"
+    systemctl is-active nginx >/dev/null 2>&1 && nginx_stat="running" || nginx_stat="stopped"
+    systemctl is-active ssh >/dev/null 2>&1 && ssh_stat="running" || ssh_stat="stopped"
+    if systemctl list-units --type=service | grep -q serveo; then
+        systemctl is-active serveo.service >/dev/null 2>&1 && serveo_stat="running" || serveo_stat="stopped"
+    else
+        serveo_stat=""
+    fi
     if [ -f /sys/class/power_supply/BAT0/capacity ]; then
         bat_cap=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null)
         bat_stat=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null)
         if [ "$bat_stat" = "Discharging" ]; then
-            printf "  │  %-10s : %-30s │\n" "battery" "${bat_cap}% (on battery)"
+            battery="${bat_cap}% (on battery)"
         else
-            printf "  │  %-10s : %-30s │\n" "battery" "${bat_cap}% (charging)"
+            battery="${bat_cap}% (charging)"
         fi
     elif [ -f /sys/class/power_supply/BAT1/capacity ]; then
         bat_cap=$(cat /sys/class/power_supply/BAT1/capacity 2>/dev/null)
         bat_stat=$(cat /sys/class/power_supply/BAT1/status 2>/dev/null)
         if [ "$bat_stat" = "Discharging" ]; then
-            printf "  │  %-10s : %-30s │\n" "battery" "${bat_cap}% (on battery)"
+            battery="${bat_cap}% (on battery)"
         else
-            printf "  │  %-10s : %-30s │\n" "battery" "${bat_cap}% (charging)"
+            battery="${bat_cap}% (charging)"
         fi
     else
-        printf "  │  %-10s : %-30s │\n" "battery" "not detected"
+        battery="not detected"
     fi
-    echo "  ├─────────────────────────────────────────────┤"
-    local_ip=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1 | head -1)
-    printf "  │  %-10s : %-30s │\n" "local ip" "${local_ip:-none}"
-    ping -c1 -W1 8.8.8.8 >/dev/null 2>&1 && net="connected" || net="offline"
-    printf "  │  %-10s : %-30s │\n" "internet" "$net"
-    echo "  ├─────────────────────────────────────────────┤"
-    systemctl is-active nginx >/dev/null 2>&1 && nginx_stat="running" || nginx_stat="stopped"
-    systemctl is-active ssh >/dev/null 2>&1 && ssh_stat="running" || ssh_stat="stopped"
-    printf "  │  %-10s : %-30s │\n" "nginx" "$nginx_stat"
-    printf "  │  %-10s : %-30s │\n" "ssh" "$ssh_stat"
-    if systemctl list-units --type=service | grep -q serveo; then
-        systemctl is-active serveo.service >/dev/null 2>&1 && serveo_stat="running" || serveo_stat="stopped"
-        printf "  │  %-10s : %-30s │\n" "serveo" "$serveo_stat"
+
+    box_w=49
+    mid_w=$((box_w - 4))
+
+    hr="$(printf '%0.s─' $(seq 1 $box_w))"
+
+    echo "  ┌${hr}┐"
+    printf "  │ %-$((box_w-2))s │\n" "LAPWATCH"
+    echo "  ├${hr}┤"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "host" "$host"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "uptime" "$upt"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "time" "$tim"
+    echo "  ├${hr}┤"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "cpu temp" "$cputemp"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "cpu load" "$cpuload"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "ram" "${ram} / ${ramtotal} (${rampct}%)"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "disk" "${disk} / ${disktotal} (${diskpct})"
+    echo "  ├${hr}┤"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "battery" "$battery"
+    echo "  ├${hr}┤"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "local ip" "${localip:-none}"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "internet" "$net"
+    echo "  ├${hr}┤"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "nginx" "$nginx_stat"
+    printf "  │  %-10s : %-$((mid_w-13))s │\n" "ssh" "$ssh_stat"
+    if [ -n "$serveo_stat" ]; then
+        printf "  │  %-10s : %-$((mid_w-13))s │\n" "serveo" "$serveo_stat"
     fi
-    echo "  └─────────────────────────────────────────────┘"
+    echo "  └${hr}┘"
     sleep 5
     clear
 done
