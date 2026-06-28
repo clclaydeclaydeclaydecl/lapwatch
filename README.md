@@ -4,7 +4,11 @@ A dead-simple TUI monitor for old laptops turned into servers. CPU temp, RAM, di
 
 ## Installation
 
-curl -sS https://raw.githubusercontent.com/clclaydeclaydeclaydecl/lapwatch/main/install.sh | bash
+via terminal, do:
+cat > ~/lapwatch.sh << 'EOF'
+(lapwatch code here)
+EOF
+chmod +x ~/lapwatch.sh
 
 ## Usage
 
