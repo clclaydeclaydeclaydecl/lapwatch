@@ -1,14 +1,14 @@
 # Lapwatch
 
-A dead-simple TUI monitor for old laptops turned into servers. CPU temp, RAM, disk, battery, network, and service status at a glance. Refreshes every 5 seconds. No bloat, no dependencies.
+A dead-simple TUI monitor for old laptops turned into servers. CPU temp, RAM, disk, battery, network.
 
-## Install
+## Installation
 
 curl -sS https://raw.githubusercontent.com/clclaydeclaydeclaydecl/lapwatch/main/install.sh | bash
 
 ## Usage
 
-lapwatch
+./lapwatch.sh
 
 ## Tested On
 
